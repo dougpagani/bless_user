@@ -48,7 +48,28 @@ _help_msg() {
 }
 
 _usage() {
-    echo "usage: $0 [...] <SSH_HOST>"
+    echo "usage: $0 [...] <HOST_STRING>"
+    echo '
+        # How to get string?
+         -k, --key      "<RAW_KEY_STRING>"
+         -f, --file     <PATH_TO_KEY>
+         -g, --github   <GITHUB_NAME>
+
+        # Which user on the remote system?
+         -u, --username  <USERNAME_TO_BLESS>
+         -r, --root          (just auth for root)
+
+        # How to connect to the system, in order to bless?
+        # ... the same as leaving it for the last argument
+         -s, --server,
+         -h, --host     <HOST_STRING>
+         -p, --port     <SSHD_PORT>
+
+        # Debugging
+         -d, --debug    Dont execute, just print values
+         -v, --verbose  Verbose; execute & print values
+
+'
 }
 #}}}
 ################################################################################
@@ -113,7 +134,7 @@ case $flag in
     ROOT_AUTH=YES
     shift # past argument
     ;;
-    -l|-u|--username)
+    -u|--username)
     USER_AUTH="$2"
     shift
     shift
@@ -262,3 +283,4 @@ exit 9
 # ... -g <NAMES-IN-DOTFILE>
 # - Generate an sshc-frag
 # - Generate an ssh-test invoke, split by --options
+# -o == opts to pass-off to SSH for blessing
