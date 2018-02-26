@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # FILE: bless_user.sh
 ################################################################################
+# Example INVOKE:
+# bless_user -f id_rsa.pub -r -h root@198.211.108.237
+################################################################################
 # {{{ Debugging Lines
 # vim: foldmethod=marker
 set -u # exit upon unset vars
@@ -41,12 +44,13 @@ _help_msg() {
         echo "UNKNOWN ARGs:" "$@"
         printf "$c_nc"
     fi
-    echo "Usage: $0 [...] <SSH_HOST>"
+    _usage
 }
-# Example INVOKE:
-# bless_user -f id_rsa.pub -r -h root@198.211.108.237
-#}}}
 
+_usage() {
+    echo "usage: $0 [...] <SSH_HOST>"
+}
+#}}}
 ################################################################################
 #{{{ FUNCTIONS:
 from_gh() {
@@ -124,6 +128,10 @@ case $flag in
     -v|--verbose) # execute main, but also print values
     VERBOSE_MODE=YES
     shift
+    ;;
+    --help)
+    _usage
+    exit 0
     ;;
 
     *)    # UNKNOWN option, or LAST
