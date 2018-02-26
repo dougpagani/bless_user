@@ -1,0 +1,236 @@
+#!/usr/bin/env bash
+# FILE: bless_user.sh
+################################################################################
+# {{{ Debugging Lines
+# vim: foldmethod=marker
+set -u # exit upon unset vars
+set -e # exit upon first-error
+set -o pipefail # exit
+# trap read debug
+
+## For simulating function-runs
+## > set argone argtwo argthree
+# PROMPT_COMMAND='echo "\ Args are: $@ #: $#"'
+
+## ALTERNATIVE TO BASH-DB
+# exec 5> >(logger -t $0)
+# BASH_XTRACEFD="5"
+PS4='$LINENO: '
+# set -x # print each line of code 
+# trap read debug
+# error() {
+#   local sourcefile=$1
+#   local lineno=$2
+#   # ...logic for reporting an error at line $lineno
+#   #    of file $sourcefile goes here...
+#}
+#trap 'error "${BASH_SOURCE}" "${LINENO}"' ERR
+# https://stackoverflow.com/questions/10743026/how-to-display-last-command-that-failed-when-using-bash-set-e
+# }}}
+################################################################################
+c_red='\033[0;31m'
+c_nc='\033[0m'
+c_pink='\033[0;35m'
+DEBUG_MODE=NO
+VERBOSE_MODE=NO
+################################################################################
+#{{{ USAGE
+_help_msg() {
+    if [ $# -ne 0 ]; then
+        printf "$c_red"
+        echo "UNKNOWN ARGs:" "$@"
+        printf "$c_nc"
+    fi
+    echo "Usage: $0 [...] <SSH_HOST>"
+}
+# Example INVOKE:
+# bless_user -f id_rsa.pub -r -h root@198.211.108.237
+#}}}
+
+################################################################################
+#{{{ FUNCTIONS:
+from_gh() {
+    curl "https://github.com/${1}.keys"
+    # -s for stderr-silent
+}
+from_file() {
+    if ! [ -f "$1" ]; then # assume it is in sshdir
+        cat "$HOME/.ssh/$1"
+    else
+        cat "$1"
+    fi
+}
+#}}}
+################################################################################
+#{{{ ARG PROCESSING:
+################################################################################
+
+ORIGINAL_POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+flag="$1"
+
+case $flag in
+    # How to get the pubkey-data?
+    -k|--key)
+    PUBKEYSTRING="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -f|--file)
+    PUBKEYFILE="$2"
+    shift # past argument
+    shift # past value
+    PUBKEYSTRING=$( from_file "$PUBKEYFILE" ) || exit 1
+    ;;
+    -g|--github*)
+    GITHUB_NAME="$2"
+    shift # past argument
+    shift # past value
+    PUBKEYSTRING=$( from_gh "$GITHUB_NAME" ) || exit 1
+    ;;
+
+    # HOW to AUTHENTICATE the key
+    # ... this can also just be the last arg, using ssh-config to find the params
+    # ... these are args to pass-off to ssh
+    -h|--host) #either a hostname, or ip-address
+    HOST="$2"
+    shift
+    shift
+    ;;
+    -p|--port)
+    SSHD_PORT="$2"
+    shift
+    shift
+    ;;
+
+    # WHAT to AUTHENTICATE the key as
+    -r|--root)
+    ROOT_AUTH=YES
+    shift # past argument
+    ;;
+    -l|-u|--username)
+    USER_AUTH="$2"
+    shift
+    shift
+    ;;
+
+    # etc.
+    -d|--debug) # just print the assigned vars, DONT execute main
+    DEBUG_MODE=YES
+    VERBOSE_MODE=YES
+    shift
+    ;;
+    -v|--verbose) # execute main, but also print values
+    VERBOSE_MODE=YES
+    shift
+    ;;
+
+    *)    # UNKNOWN option, or LAST
+    if [ $# -gt 1 ]; then # it is NOT LAST ARG, so error
+        UNKNOWN_ARGS+=("$1") # save it in an array for later
+        shift # past argument
+    else 
+        SSH_STRING="$1"
+        shift
+    fi
+    ;;
+esac
+done
+
+set -- "${ORIGINAL_POSITIONAL[@]}" # restore positional parameters
+
+# VERBOSE MODE: print the values of the processed params
+printvar() { #{{{
+    printf "$c_pink"
+    printf "${1}="
+    printf "$c_nc"
+    echo "${!1}"
+} #}}}
+set +u # prevent unbound vars from causing exit
+if [[ $VERBOSE_MODE == YES ]]; then
+    varnames="
+PUBKEYSTRING
+PUBKEYFILE
+GITHUB_NAME
+HOST
+SSHD_PORT
+ROOT_AUTH
+USER_AUTH
+DEBUG_MODE
+SSH_STRING
+"
+    for varname in $varnames; do
+        printvar "$varname"
+    done
+
+    echo "Args remaining:" "$@" "\$#: $#"
+    echo bash version: $BASH_VERSION
+################################################################################
+fi
+set -u # turn strict-mode back on
+
+
+################################################################################
+# If invoked with unknown parameters, fail-out
+set +u
+if [ ${#UNKNOWN_ARGS} -ne 0 ]; then
+    _help_msg "${UNKNOWN_ARGS[@]}"
+    exit 1
+fi
+set -u
+#}}}
+################################################################################
+#{{{ MAIN
+main() {
+    :
+    # 1. Get the pubkey data / string
+    #PUBKEYSTRING=
+
+    return 0
+}
+
+if ! [[ "$DEBUG_MODE" = YES ]]; then
+    main || {
+        main_exit_code=$?
+        _help_msg
+        exit $main_exit_code
+    }
+else
+    exit 1
+fi
+#}}}
+
+################################################################################
+echo END OF SCRIPT
+exit 9
+################################################################################
+# ROBUSTNESS & USABILITY TESTS:
+# TODO
+# - $2 -- unbound variable ... if a pairing-flag is at the script end, 
+# ... it will fail to set.
+# - SOLUTION: ${2?Must provide THING}
+
+# - is $PUBKEYSTRING already set? well, error because the program-user
+# ... may be confused as to how to invoke.
+
+# - is the system up? (ping)
+# - can you yourself ssh in to the system? (-q ... bash -c 'exit')
+# - do you have access to make users on the HOST?
+
+# - does the user already exist on the system?
+# - ... would you like to then make the user?
+# - warning for giving ROOT access
+# - after catting the string, check that the pubkey is there
+# - ... could check your own admin-key, 
+# - ... then use that same script/procedure once you know it works.
+
+# - Generating a SSH_TEST_CMD=( invoke ) to print & share with the user
+# ----> could generate special parameters implicit in ssh's config file
+# ... by collating parameters from ssh -G's printout
+
+# ETC.
+# Turn the help-msg // args into an array
+#   - debug mode uses it
+#   - help msg generation uses it
+#   - arg-processing uses it
