@@ -2,7 +2,7 @@
 # FILE: bless_user.sh
 ################################################################################
 # Example INVOKE:
-# bless_user -f id_rsa.pub -r -h root@198.211.108.237
+# bless_user -f id_rsa.pub -r root@198.211.108.237
 ################################################################################
 # {{{ Debugging Lines
 # vim: foldmethod=marker
