@@ -234,6 +234,13 @@ fi
 echo END OF SCRIPT
 exit 9
 ################################################################################
+# Copying-in the KEYDATA
+# use SSH_INVOKE=() instead of KEYDATA
+DATASERVER_IP=1 # server
+KEYDATA=1 # key, with comment
+echo "$KEYDATA" | ssh root@${DATASERVER_IP} 'umask 0077; mkdir -p .ssh; cat >> $HOME/.ssh/authorized_keys && cat "$HOME/.ssh/authorized_keys"'
+
+################################################################################
 # ROBUSTNESS & USABILITY TESTS:
 # TODO
 # - $2 -- unbound variable ... if a pairing-flag is at the script end, 
@@ -284,3 +291,4 @@ exit 9
 # - Generate an sshc-frag
 # - Generate an ssh-test invoke, split by --options
 # -o == opts to pass-off to SSH for blessing
+
