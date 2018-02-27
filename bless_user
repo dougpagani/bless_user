@@ -212,9 +212,25 @@ set -u
 ################################################################################
 #{{{ MAIN
 main() {
-    :
-    # 1. Get the pubkey data / string
-    #PUBKEYSTRING=
+
+    # 1. Check that key data has been defined
+    if [[ -z $PUBKEYSTRING ]]; then
+        error "No key data defined; must supply either -f/-k/-g."
+        _help_msg
+    fi
+
+    # Write the key to the authorization file
+    echo "$PUBKEYSTRING" | ssh $SSH_STRING '
+    umask 0077; 
+    mkdir -p $HOME/.ssh; 
+    cat >> $HOME/.ssh/authorized_keys;
+
+    echo -e "\033[0;35m"
+    echo AUTHORIZED KEYS FILE CONTENTS, NOW:
+    echo -e "\033[0;m"
+    cat $HOME/.ssh/authorized_keys | nl
+    '
+    
 
     return 0
 }
