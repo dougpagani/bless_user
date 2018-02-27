@@ -36,6 +36,7 @@ c_nc='\033[0m'
 c_pink='\033[0;35m'
 DEBUG_MODE=NO
 VERBOSE_MODE=NO
+HOST_TO_BE_AUTHED=NONE
 ################################################################################
 #{{{ USAGE
 _help_msg() {
@@ -54,14 +55,13 @@ _usage() {
          -k, --key      "<RAW_KEY_STRING>"
          -f, --file     <PATH_TO_KEY>
          -g, --github   <GITHUB_NAME>
+         -s, --server   <SSH_STRING>
 
         # Which user on the remote system?
          -u, --username  <USERNAME_TO_BLESS>
          -r, --root          (just auth for root)
 
         # How to connect to the system, in order to bless?
-        # ... the same as leaving it for the last argument
-         -s, --server,
          -h, --host     <HOST_STRING>
          -p, --port     <SSHD_PORT>
 
@@ -84,6 +84,9 @@ from_file() {
     else
         cat "$1"
     fi
+}
+from_server() {
+    ssh $1 'cat ~/.ssh/id_rsa.pub'
 }
 #}}}
 ################################################################################
@@ -114,16 +117,24 @@ case $flag in
     shift # past value
     PUBKEYSTRING=$( from_gh "$GITHUB_NAME" ) || exit 1
     ;;
+    -s|--server)
+    HOST_TO_BE_AUTHED="$2"
+    shift # past argument
+    shift # past value
+    PUBKEYSTRING=$( from_server "$HOST_TO_BE_AUTHED" ) || exit 1
+    ;;
 
     # HOW to AUTHENTICATE the key
     # ... this can also just be the last arg, using ssh-config to find the params
     # ... these are args to pass-off to ssh
     -h|--host) #either a hostname, or ip-address
+    echo -- "$flag is not yet implemented" && exit 1
     HOST="$2"
     shift
     shift
     ;;
     -p|--port)
+    echo -- "$flag is not yet implemented" && exit 1
     SSHD_PORT="$2"
     shift
     shift
@@ -131,10 +142,12 @@ case $flag in
 
     # WHAT to AUTHENTICATE the key as
     -r|--root)
+    echo -- "$flag is not yet implemented" && exit 1
     ROOT_AUTH=YES
     shift # past argument
     ;;
     -u|--username)
+    echo -- "$flag is not yet implemented" && exit 1
     USER_AUTH="$2"
     shift
     shift
@@ -188,6 +201,7 @@ ROOT_AUTH
 USER_AUTH
 DEBUG_MODE
 SSH_STRING
+HOST_TO_BE_AUTHED
 "
     for varname in $varnames; do
         printvar "$varname"
@@ -229,10 +243,8 @@ main() {
     echo AUTHORIZED KEYS FILE CONTENTS, NOW:
     echo -e "\033[0;m"
     cat $HOME/.ssh/authorized_keys | nl
-    '
-    
+    ' && exit 0
 
-    return 0
 }
 
 if ! [[ "$DEBUG_MODE" = YES ]]; then
@@ -250,4 +262,3 @@ fi
 echo END OF SCRIPT
 exit 9
 ################################################################################
-
