@@ -101,24 +101,24 @@ flag="$1"
 case $flag in
     # How to get the pubkey-data?
     -k|--key)
-    PUBKEYSTRING="$2"
+    PUBKEYSTRING="${2:?${flag} requires a second argument.$'\n\n'"$(_help_msg)"}"
     shift # past argument
     shift # past value
     ;;
     -f|--file)
-    PUBKEYFILE="$2"
+    PUBKEYFILE="${2:?${flag} requires a second argument.$'\n\n'"$(_help_msg)"}"
     shift # past argument
     shift # past value
     PUBKEYSTRING=$( from_file "$PUBKEYFILE" ) || exit 1
     ;;
     -g|--github*)
-    GITHUB_NAME="$2"
+    GITHUB_NAME="${2:?${flag} requires a second argument.$'\n\n'"$(_help_msg)"}"
     shift # past argument
     shift # past value
     PUBKEYSTRING=$( from_gh "$GITHUB_NAME" ) || exit 1
     ;;
     -s|--server)
-    HOST_TO_BE_AUTHED="$2"
+    HOST_TO_BE_AUTHED="${2:?${flag} requires a second argument.$'\n\n'"$(_help_msg)"}"
     shift # past argument
     shift # past value
     PUBKEYSTRING=$( from_server "$HOST_TO_BE_AUTHED" ) || exit 1
