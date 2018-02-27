@@ -15,3 +15,17 @@ while ; ; ; <(ssh -g)
 (non-ssh-config-contingent)
 - if user doesnt have a key ON github
 - useradd to create a user with the requested UN, if none currently exists
+
+# Advanced key-user association-mgmt
+- If -k is supplied, prompt to ask for a NAME for the key, storing it 
+.... in the $HOME/.bless directory
+- Being able to auth by ssh-points: 
+(so that different servers can "talk to one another", directly)
+... can ssh into e.g. mango, and arturo, and you want to bless mango for arturo
+    # Could use MasterController to pipe all these commands to the ssh-point
+    - check if they have a key
+    - if not, generate it
+    - then pipe it in
+- add a comment next to the key, on-server
+- cache the keys in a "keyring"
+# ALT: use gpg's fxnality of the keyring
