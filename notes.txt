@@ -1,64 +1,17 @@
 # notes.txt
 ################################################################################
 
-getghpubkey malachyburke 2>/dev/null | ssh-keygen -lf - -E md5 
-
-ssh-keygen -t rsa -b 4096 -C 'MJB default key, new laptop' -f ~/.ssh/id_rsa
-
-ssh-keygen -lf ${1-~/.ssh/id_rsa.pub} -E md5 | sed 's/.*MD5://' | sed 's/ .*//'
-
-cat ~/.ssh/id_rsa.pub | pbcopy
-
-DATASERVER_IP=1 #server
-
-# Default UN: root
-: ${UN:=root}
-
-################################################################################
-
-
-# Store things on a shared drive, then...
-# /opt/share ...
-bless_user() {
-    # OPTS:
-        # How to get string?
-        # -k PUBKEYCAT -- raw string, in "quotes"
-        # -f PUBKEYPLACE -- filepath, locally
-        # -g GITHUB_NAME -- name on github
-
-        # Which user on the remote system?
-        # -l LOGIN_NAME 
-        # ... : ${LOGIN_NAME:-$(\id -un)}
-        # ---> does the user have to be created, or not?
-        # -r ... just auth for root
-
-        # How to connect to the system, in order to bless?
-        # -s $DATASERVER_IP
-        # -p $SSHD_PORT
-        # ... and also formatting an ssh-test command, with those info
-        # TODO: grab the ip, automatically, in providing a domain-name
-        # ... maybe parsed from ssh -G
-        # TODO: print the host-parameters to their sshconfig file
-        # TODO: check the string
-################################################################################
-# VAR-PREP:
-################################################################################
-
-    DATASERVER_IP=1 # server
-    KEYDATA="$1"
-
-    # if -f
-    if [[ $IS_FILE = 1 ]]; then
-        KEYDATA=$(cat "$KEYPLACE")
-    fi
-
-################################################################################
-    # IF -r
-    echo "$KEYDATA" | ssh root@${DATASERVER_IP} 'umask 0077; mkdir -p .ssh; cat >> $HOME/.ssh/authorized_keys && cat "$HOME/.ssh/authorized_keys"'
-
-    # ELSE
-    # useradd, first, then ssh in as root, or as a sudo'd user, and cat-keys
-
-################################################################################
-}
-
+# Ideas, issues, improvements, and potential features:
+- man pages
+- -h for brief-help (including a supposition to use --help)
+... , --help for longer help
+... -h will use POSSIBLE_PARAMS=()
+... --help => _help_verbose()
+... --help => _help_brief()
+- completion
+- install with make/config/w.e.
+- Printing the proper command-invoke, with ssh-params: 
+while ; ; ; <(ssh -g)
+(non-ssh-config-contingent)
+- if user doesnt have a key ON github
+- useradd to create a user with the requested UN, if none currently exists
