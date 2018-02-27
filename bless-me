@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# FILE: bless_me.sh
+# DESCRIPTION: A script to help those navigate tedium associated with ssh-based
+#              authentication, who may not be familiar with the various 
+#              operations & verifications associated with the task.
+################################################################################
+# {{{ Debugging Lines
+# vim: foldmethod=marker
+set -u # exit upon unset vars
+set -e # exit upon first-error
+set -o pipefail # exit
+# trap read debug
+
+## For simulating function-runs
+## > set argone argtwo argthree
+# PROMPT_COMMAND='echo "\ Args are: $@ #: $#"'
+
+## ALTERNATIVE TO BASH-DB
+# exec 5> >(logger -t $0)
+# BASH_XTRACEFD="5"
+PS4='$LINENO: '
+# set -x # print each line of code 
+# trap read debug
+# error() {
+#   local sourcefile=$1
+#   local lineno=$2
+#   # ...logic for reporting an error at line $lineno
+#   #    of file $sourcefile goes here...
+#}
+#trap 'error "${BASH_SOURCE}" "${LINENO}"' ERR
+# https://stackoverflow.com/questions/10743026/how-to-display-last-command-that-failed-when-using-bash-set-e
+# }}}
+################################################################################
+
+
+error() {
+    c_red='\033[0;31m'
+    c_nc='\033[0m'
+    echo -e "$c_red    ERROR: $@" "$c_nc" 1>&2;
+    echo "$@" 1>&2;
+}
+
+################################################################################
+# Verify the user
+# TODO: could parse `ssh -T` 's output to grab who github THINKS you are
+# test: tuckaway your own private key so github cant find it
+# ... and observe what output if your keys arent known by GH
+# ... process accordingly
+getghpubkey () { 
+    # Possibilities:
+    # 1. one key #> just one line
+    # 2. several keys #> separated by newlines (use: wc -l)
+    # (just parse and get latest; `tail 1`)
+    # 3. no key #> # it will be empty [ERROR]
+    # 4. not a valid username #>"Not Found" [ERROR]
+    c_grey='\033[1;32m'
+
+    local keys_response nlines key 
+    keys_response=$(curl -s https://github.com/${1}.keys;)
+    if [[ -z $keys_response ]]; then # ERROR
+        error "Github user $1 found, but no keys have been planted."
+        return 1
+    elif [[ $keys_response == "Not Found" ]]; then # ERROR
+        error "NO SUCH USER: $1"
+        return 1
+    else
+        nlines=$( echo "$keys_response" | wc -l | sed 's/\s*//g' )
+        latest_key=$( echo "$keys_response" | tail -n1 )
+        if [[ $nlines -eq 1 ]]; then # only one key
+            key_data="$keys_response"
+        elif [[ $nline -gt 1 ]]; then # several keys
+            error "Too many keys"
+            return 1
+        else
+            error "No lines, but a response received? This shouldnt be possible."
+            return 1
+        fi
+    fi
+    # 
+    if [[ -t 2 ]] && [[ $(uname) == Darwin ]]; then
+        echo "$key_data" | tee -a /dev/tty | pbcopy
+        echo -e $c_grey "...Copied to your clipboard." >&2
+    else
+        echo "$key_data"
+    fi
+
+}
+# If no key on Github present: gen a key if none, and: "Would you like to add your key to GH?"
+
+
+################################################################################
+getghpubkey dougpagani
+exit 0
+################################################################################
+: ${UN:-dougpagani}
+gh_pubkey=$(getghpubkey "$UN") 
+md5_sig=$(echo "$gh_pubkey" | ssh-keygen -lf - -E md5 )
+md5_hash=$( echo "$md5_sig" | sed 's/.*MD5://' | sed 's/ .*//')
+
+# Generate a key
+: ${KEYNAME:-foobar}
+mkdir -p $HOME/.ssh/
+ssh-keygen -t rsa -b 4096 -C "$UN@$(hostname) default key" -f ~/.ssh/${KEYNAME}
+
+# PRINT the new, or existing, public key:
+if [[ $(uname) == "Darwin" ]]; then # macOS
+    cat ~/.ssh/${KEYNAME}.pub | tee -a /dev/tty | pbcopy
+    echo -e "...Copied to your clipboard."
+else
+    cat ~/.ssh/${KEYNAME}.pub
+fi
+
+################################################################################
