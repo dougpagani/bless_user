@@ -41,6 +41,7 @@ c_pink='\033[0;35m'
 DEBUG_MODE=NO
 VERBOSE_MODE=NO
 HOST_TO_BE_AUTHED=NONE
+VERIFY_MODE=NO
 #}}}
 ################################################################################
 #{{{ USAGE
@@ -72,13 +73,14 @@ _usage() {
 
         # Debugging
          -d, --debug    Dont execute, just print values
-         -v, --verbose  Verbose; execute & print values
+         -v, --verify   See if key/user is verified already
+         --verbose      Verbose; execute & print values
 
 '
 }
 #}}}
 ################################################################################
-#{{{ FUNCTIONS:
+#{{{ ARG-PROC HELPER FUNCTIONS:
 from_gh() {
     curl "https://github.com/${1}.keys"
     # -s for stderr-silent
@@ -164,8 +166,12 @@ case $flag in
     VERBOSE_MODE=YES
     shift
     ;;
-    -v|--verbose) # execute main, but also print values
+    --verbose) # execute main, but also print values
     VERBOSE_MODE=YES
+    shift
+    ;;
+    -v|--verify)
+    VERIFY_MODE=YES
     shift
     ;;
     --help)
@@ -229,8 +235,33 @@ fi
 set -u
 #}}}
 ################################################################################
+#{{{ FUNCTIONS: for helping main
+view_remote_authorized_keys() {
+    ssh $SSH_STRING '
+    echo -e "\033[0;35m"
+    echo AUTHORIZED KEYS FILE CONTENTS, NOW:
+    echo -e "\033[0;m"
+    cat $HOME/.ssh/authorized_keys | nl
+    echo 
+    '
+}
+
+#}}}
+################################################################################
 #{{{ MAIN
 main() {
+    # 0. To verify?
+    if [[ $VERIFY_MODE = YES ]]; then
+        tput rmam ; printf %b '\033[?7l' # wrapoff
+        view_remote_authorized_keys || {
+        LEC=$?
+        tput smam ; printf %b '\033[?7h' # wrapon
+        exit $LEC
+    }
+        tput smam ; printf %b '\033[?7h' # wrapon
+    # Verify complete
+    exit 0
+    fi
 
     # 1. Check that key data has been defined
     if [[ -z $PUBKEYSTRING ]]; then
@@ -243,12 +274,10 @@ main() {
     umask 0077; 
     mkdir -p $HOME/.ssh; 
     cat >> $HOME/.ssh/authorized_keys;
+    ' || exit $?
 
-    echo -e "\033[0;35m"
-    echo AUTHORIZED KEYS FILE CONTENTS, NOW:
-    echo -e "\033[0;m"
-    cat $HOME/.ssh/authorized_keys | nl
-    ' && exit 0
+    # Now view the keys 
+    view_remote_authorized_keys || exit $?
 
 }
 
