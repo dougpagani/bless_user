@@ -31,6 +31,8 @@ PS4='$LINENO: '
 # https://stackoverflow.com/questions/10743026/how-to-display-last-command-that-failed-when-using-bash-set-e
 # }}}
 ################################################################################
+# TODO: use ssh-keyreg, or pieces of it, a 100-line script to programmatically
+# ... add a key to github FOR the user
 
 
 error() {

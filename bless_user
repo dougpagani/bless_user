@@ -31,12 +31,17 @@ PS4='$LINENO: '
 # https://stackoverflow.com/questions/10743026/how-to-display-last-command-that-failed-when-using-bash-set-e
 # }}}
 ################################################################################
+#{{{ c_color codes
 c_red='\033[0;31m'
 c_nc='\033[0m'
 c_pink='\033[0;35m'
+#}}}
+################################################################################
+#{{{ Variable declarations
 DEBUG_MODE=NO
 VERBOSE_MODE=NO
 HOST_TO_BE_AUTHED=NONE
+#}}}
 ################################################################################
 #{{{ USAGE
 _help_msg() {
