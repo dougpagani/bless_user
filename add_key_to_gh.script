@@ -1,0 +1,17 @@
+# Generate a key first if need be:
+ssh-keygen
+
+# download the utility which handles the auth'ing
+sudo sh -c "curl https://raw.githubusercontent.com/b4b4r07/ssh-keyreg/master/bin/ssh-keyreg -o /usr/local/bin/ssh-keyreg &&
+chmod +x /usr/local/bin/ssh-keyreg"
+
+# Use the utility
+ssh-keyreg
+################################################################################
+# Troubleshooting verification:
+
+# BEFORE, check: https://github.com/settings/keys
+# Then after, check again.
+
+
+# Utility source: https://github.com/b4b4r07/ssh-keyreg
